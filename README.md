@@ -41,43 +41,41 @@ Add clickable IMDb ratings to Plex Web.
 
 ### 2. Install Extension
 
-**Quick Method (Recommended):**
-```bash
-cd plex-imdb-extension
+#### For End Users (Recommended)
 
-# For Chrome/Edge/Brave:
-./switch-browser.sh chrome
+**Download from [GitHub Releases](https://github.com/Bibi40k/plex-imdb-extension/releases):**
 
-# For Firefox:
-./switch-browser.sh firefox
-```
+**Chrome/Edge/Brave:**
+1. Download `plex-imdb-extension-chrome-vX.Y.Z.zip`
+2. Extract the zip file
+3. Go to `chrome://extensions/`
+4. Enable **Developer mode** (top-right toggle)
+5. Click **Load unpacked**
+6. Select the extracted folder
 
-Then load the extension:
-- **Chrome/Edge:** `chrome://extensions/` → Enable Developer mode → Load unpacked
-- **Firefox:** `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → Select `manifest.json`
+**Firefox:**
+1. Download `plex-imdb-extension-firefox-vX.Y.Z.zip`
+2. Extract the zip file
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click **Load Temporary Add-on**
+5. Select `manifest.json` from extracted folder
 
 ---
 
-**Manual Method:**
+#### For Developers (Source Code)
 
-**Chrome/Edge/Brave:**
-1. Download this repository
-2. Use `./switch-browser.sh chrome` or copy `manifest-chrome.json` to `manifest.json`
-3. Go to `chrome://extensions/`
-4. Enable **Developer mode**
-5. Click **Load unpacked**
-6. Select `plex-imdb-extension` folder
+If you're developing or testing from source:
 
-**Firefox:**
-1. Download this repository
-2. Keep `manifest.json` as is (already Firefox-compatible)
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click **Load Temporary Add-on**
-5. Select `manifest.json`
+```bash
+git clone https://github.com/Bibi40k/plex-imdb-extension
+cd plex-imdb-extension
 
-**Note:** We provide separate manifests because:
-- Chrome/Edge: Uses `service_worker` (MV3 optimized)
-- Firefox: Uses `scripts` (MV3 compatible, service workers not fully supported yet)
+# Switch to your target browser
+./switch-browser.sh chrome   # For Chrome/Edge/Brave
+./switch-browser.sh firefox  # For Firefox
+```
+
+Then load as unpacked extension (see steps above).
 
 ### 3. Configure OMDb API Key (Required)
 
