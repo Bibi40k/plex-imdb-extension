@@ -7,6 +7,13 @@
   "author": "Plex IMDb Enhancer Contributors",
   "homepage_url": "https://github.com/Bibi40k/plex-imdb-extension",
 
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "plex-imdb-enhancer@anthropic.com",
+      "strict_min_version": "109.0"
+    }
+  },
+
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -38,7 +45,7 @@
   },
 
   "background": {
-    "service_worker": "background-chrome.js"
+    "scripts": ["background-firefox.js"]
   },
 
   "content_security_policy": {

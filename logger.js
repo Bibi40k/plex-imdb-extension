@@ -24,8 +24,7 @@ class Logger {
     _log(level, message, ...args) {
         if (this.levels[level] < this.minLevel) return;
 
-        const timestamp = new Date().toISOString();
-        const prefix = `[${timestamp}] [${this.namespace}] [${level.toUpperCase()}]`;
+        const prefix = `[PIMDB:${this.namespace}]`;
 
         const method = level === 'error' ? console.error :
                       level === 'warn' ? console.warn :

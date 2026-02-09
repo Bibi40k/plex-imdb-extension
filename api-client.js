@@ -12,18 +12,62 @@ class OMDBClient {
         this.cache = apiCache;
         this.rateLimiter = rateLimiter;
         this.logger = new Logger('OMDBClient');
+        this.apiKey = null;
+
+        // Load API key from storage
+        this.loadApiKey();
+
+        // Listen for storage changes and reload API key
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'sync' && changes.omdbApiKey) {
+                this.logger.info('🔄 [OMDb] API key changed, reloading');
+                this.loadApiKey();
+            }
+        });
     }
 
     /**
-     * Get API key from storage
+     * Load API key from storage
+     * AUTO-RELOAD: Similar to Plex credentials
+     */
+    async loadApiKey() {
+        const storage = window.storageUtils;
+        if (!storage) {
+            this.logger.warn('StorageUtils not available, using fallback');
+            return new Promise((resolve) => {
+                chrome.storage.sync.get(['omdbApiKey'], (result) => {
+                    this.apiKey = result.omdbApiKey || null;
+                    this.logger.info('⚙️ [OMDb] API key loaded', {
+                        hasKey: !!this.apiKey,
+                        keyLength: this.apiKey ? this.apiKey.length : 0
+                    });
+                    resolve();
+                });
+            });
+        }
+
+        const result = await storage.get(['omdbApiKey'], { omdbApiKey: null });
+        this.apiKey = result.omdbApiKey;
+
+        this.logger.info('⚙️ [OMDb] API key loaded', {
+            hasKey: !!this.apiKey,
+            keyLength: this.apiKey ? this.apiKey.length : 0
+        });
+
+        if (this.apiKey) {
+            this.logger.info('✅ [OMDb] API client initialized and ready');
+        } else {
+            this.logger.debug('⏭️ [OMDb] API key not configured');
+        }
+    }
+
+    /**
+     * Get API key (cached)
      * @returns {Promise<string|null>}
      */
     async getApiKey() {
-        return new Promise((resolve) => {
-            chrome.storage.sync.get(['omdbApiKey'], (result) => {
-                resolve(result.omdbApiKey || null);
-            });
-        });
+        // Return cached API key
+        return this.apiKey;
     }
 
     /**

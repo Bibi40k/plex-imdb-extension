@@ -189,6 +189,53 @@
         .current-key strong {
             color: #4CAF50;
         }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible-header:hover {
+            opacity: 0.8;
+        }
+
+        .collapsible-content {
+            margin-top: 12px;
+            display: none;
+        }
+
+        .collapsible-content.open {
+            display: block;
+        }
+
+        .optional-badge {
+            font-size: 10px;
+            background: #555;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #ccc;
+        }
+
+        #quickSetupStatus {
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        #quickSetupStatus.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            display: block !important;
+        }
+
+        #quickSetupStatus.error {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            display: block !important;
+        }
     </style>
 </head>
 <body>
@@ -229,6 +276,63 @@
     </div>
 
     <div class="section">
+        <div class="collapsible-header" id="plexToggle">
+            <div class="section-title">⚙️ <span data-i18n="advancedSettings">Advanced Settings</span></div>
+            <span class="optional-badge" data-i18n="optional">Optional</span>
+        </div>
+
+        <div class="collapsible-content" id="plexContent">
+            <!-- Combined Info Box: Enhancement description + Tutorial -->
+            <div class="info-box">
+                <strong data-i18n="plexEnhancement">Plex API Enhancement:</strong>
+                <p data-i18n="plexInfo" style="margin-top: 8px;">Connect to your Plex server for better title matching (uses original titles from Plex metadata). Extension works without this.</p>
+
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 24, 0.3);">
+                    <strong data-i18n="howToGetPlexToken">How to get Plex Token & URL:</strong>
+                    <ol style="margin-top: 5px;">
+                        <li data-i18n="plexStep1">Open Plex Web (app.plex.tv)</li>
+                        <li data-i18n="plexStep2">Go to any movie/show</li>
+                        <li data-i18n="plexStep3">Click ⋮ (three dots) → Get Info → View XML</li>
+                        <li data-i18n="plexStep4Copy">Copy the <strong>full URL</strong> from browser address bar</li>
+                    </ol>
+                    <div style="margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: monospace; font-size: 10px;">
+                        <strong>Example:</strong><br>
+                        <span style="color: #4CAF50;">https://12-34-56-78.abc.plex.direct:32400</span>/library/metadata/123?X-Plex-Token=<span style="color: #f5c518;">xyz789</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Setup Field -->
+            <div style="margin-top: 15px; padding: 12px; background: rgba(245, 197, 24, 0.1); border: 2px dashed #f5c518; border-radius: 6px;">
+                <label for="quickSetupInput" style="font-weight: bold; color: #f5c518; margin-bottom: 8px; display: block;">
+                    🚀 <span data-i18n="quickSetup">Quick Setup - Paste XML URL</span>
+                </label>
+                <input type="text" id="quickSetupInput" data-i18n-placeholder="quickSetupPlaceholder" placeholder="Paste full URL from View XML..." style="font-family: monospace; font-size: 12px;">
+                <div id="quickSetupStatus" style="margin-top: 8px; font-size: 11px; display: none;"></div>
+            </div>
+
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #555;">
+                <div style="text-align: center; color: #888; font-size: 11px; margin-bottom: 10px;" data-i18n="orManual">— OR configure manually —</div>
+            </div>
+
+            <label for="plexTokenInput" data-i18n="plexToken" style="display: block;">Plex Token:</label>
+            <div style="position: relative; width: 100%;">
+                <input type="password" id="plexTokenInput" data-i18n-placeholder="plexTokenPlaceholder" placeholder="e.g., xyzABC123...">
+                <button type="button" id="togglePlexVisibility" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 20px; padding: 0; color: #aaa; line-height: 1;">👁️</button>
+            </div>
+
+            <label for="plexUrlInput" data-i18n="plexUrl" style="margin-top: 12px; display: block;">Plex Server URL:</label>
+            <input type="text" id="plexUrlInput" data-i18n-placeholder="plexUrlPlaceholder" placeholder="https://xx-xx-xx-xx.abc123.plex.direct:32400">
+
+            <button id="savePlexButton" class="button button-primary" data-i18n="savePlexButton">💾 Save Plex Settings</button>
+            <button id="testPlexButton" class="button button-secondary" data-i18n="testPlexButton">🧪 Test Plex Connection</button>
+            <button id="clearPlexButton" class="button button-secondary" data-i18n="clearPlexButton">🗑️ Clear Plex Settings</button>
+
+            <div id="plexStatus" class="status"></div>
+        </div>
+    </div>
+
+    <div class="section">
         <div class="section-title">ℹ️ <span data-i18n="infoSection">Information</span></div>
         <div style="font-size: 12px; color: #aaa; line-height: 1.6;">
             <p><strong data-i18n="howItWorks">How it works:</strong></p>
@@ -248,6 +352,8 @@
 
     <script src="config.js"></script>
     <script src="logger.js"></script>
+    <script src="storage-utils.js"></script>
+    <script src="validators.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

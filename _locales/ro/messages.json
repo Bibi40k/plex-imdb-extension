@@ -121,5 +121,98 @@
   },
   "buttonInvalid": {
     "message": "❌ Invalid!"
+  },
+  "advancedSettings": {
+    "message": "Setări Avansate"
+  },
+  "optional": {
+    "message": "Opțional"
+  },
+  "plexEnhancement": {
+    "message": "Îmbunătățire Plex API:"
+  },
+  "plexInfo": {
+    "message": "Conectează-te la serverul tău Plex pentru potrivire mai bună a titlurilor (folosește titluri originale din metadatele Plex). Extensia funcționează și fără asta."
+  },
+  "quickSetup": {
+    "message": "Configurare Rapidă - Paste URL XML"
+  },
+  "quickSetupPlaceholder": {
+    "message": "Paste URL complet din View XML..."
+  },
+  "quickSetupSuccess": {
+    "message": "Extras & salvat!<br>Token: {TOKEN}...<br>Server: {SERVER}"
+  },
+  "quickSetupInvalid": {
+    "message": "URL invalid. Te rog paste-uiește URL-ul complet din \"View XML\" (trebuie să conțină X-Plex-Token)"
+  },
+  "quickSetupExtractionFailed": {
+    "message": "Nu am putut extrage token/URL. Verifică formatul URL-ului."
+  },
+  "orManual": {
+    "message": "— SAU configurare manuală —"
+  },
+  "plexToken": {
+    "message": "Token Plex:"
+  },
+  "plexTokenPlaceholder": {
+    "message": "ex: xyzABC123..."
+  },
+  "plexUrl": {
+    "message": "URL Server Plex:"
+  },
+  "plexUrlPlaceholder": {
+    "message": "https://xx-xx-xx-xx.abc123.plex.direct:32400"
+  },
+  "howToGetPlexToken": {
+    "message": "Cum obții Token-ul & URL-ul Plex:"
+  },
+  "plexStep1": {
+    "message": "Deschide Plex Web (app.plex.tv)"
+  },
+  "plexStep2": {
+    "message": "Mergi la orice film/serial"
+  },
+  "plexStep3": {
+    "message": "Click pe ⋮ (trei puncte) → Get Info → View XML"
+  },
+  "plexStep4": {
+    "message": "Din URL, copiază <strong>AMBELE</strong>:<br>• Token: valoarea <code>X-Plex-Token=...</code><br>• Server URL: <code>https://...plex.direct:32400</code> (înainte de /library)"
+  },
+  "plexStep4Copy": {
+    "message": "Copiază <strong>URL-ul complet</strong> din bara de adrese a browser-ului"
+  },
+  "savePlexButton": {
+    "message": "💾 Salvează Setări Plex"
+  },
+  "testPlexButton": {
+    "message": "🧪 Testează Conexiunea Plex"
+  },
+  "clearPlexButton": {
+    "message": "🗑️ Șterge Setări Plex"
+  },
+  "successPlexTest": {
+    "message": "✅ Conectat la: {SERVER}"
+  },
+  "errorPlexTest": {
+    "message": "❌ Conexiune eșuată: {ERROR}"
+  },
+  "errorPlexIncomplete": {
+    "message": "Te rog furnizează atât token-ul Plex cât și URL-ul, sau lasă ambele goale"
+  },
+  "errorPlexUrlInvalid": {
+    "message": "URL-ul Plex trebuie să înceapă cu http:// sau https://"
+  },
+  "errorSaveFailed": {
+    "message": "Salvarea setărilor Plex a eșuat"
+  },
+  "successPlexSaved": {
+    "message": "✅ Setări Plex salvate! Reîncarcă pagina Plex pentru a aplica."
+  },
+  "confirmDeletePlex": {
+    "message": "Ești sigur că vrei să ștergi setările Plex?"
+  },
+  "successPlexDeleted": {
+    "message": "🗑️ Setări Plex șterse"
   }
 }

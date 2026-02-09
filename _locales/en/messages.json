@@ -121,5 +121,98 @@
   },
   "buttonInvalid": {
     "message": "❌ Invalid!"
+  },
+  "advancedSettings": {
+    "message": "Advanced Settings"
+  },
+  "optional": {
+    "message": "Optional"
+  },
+  "plexEnhancement": {
+    "message": "Plex API Enhancement:"
+  },
+  "plexInfo": {
+    "message": "Connect to your Plex server for better title matching (uses original titles from Plex metadata). Extension works without this."
+  },
+  "quickSetup": {
+    "message": "Quick Setup - Paste XML URL"
+  },
+  "quickSetupPlaceholder": {
+    "message": "Paste full URL from View XML..."
+  },
+  "quickSetupSuccess": {
+    "message": "Extracted & saved!<br>Token: {TOKEN}...<br>Server: {SERVER}"
+  },
+  "quickSetupInvalid": {
+    "message": "Invalid URL. Please paste the full URL from \"View XML\" (must contain X-Plex-Token)"
+  },
+  "quickSetupExtractionFailed": {
+    "message": "Could not extract token/URL. Please check the URL format."
+  },
+  "orManual": {
+    "message": "— OR configure manually —"
+  },
+  "plexToken": {
+    "message": "Plex Token:"
+  },
+  "plexTokenPlaceholder": {
+    "message": "e.g., xyzABC123..."
+  },
+  "plexUrl": {
+    "message": "Plex Server URL:"
+  },
+  "plexUrlPlaceholder": {
+    "message": "https://xx-xx-xx-xx.abc123.plex.direct:32400"
+  },
+  "howToGetPlexToken": {
+    "message": "How to get Plex Token & URL:"
+  },
+  "plexStep1": {
+    "message": "Open Plex Web (app.plex.tv)"
+  },
+  "plexStep2": {
+    "message": "Go to any movie/show"
+  },
+  "plexStep3": {
+    "message": "Click ⋮ (three dots) → Get Info → View XML"
+  },
+  "plexStep4": {
+    "message": "From URL, copy <strong>BOTH</strong>:<br>• Token: <code>X-Plex-Token=...</code> value<br>• Server URL: <code>https://...plex.direct:32400</code> (before /library)"
+  },
+  "plexStep4Copy": {
+    "message": "Copy the <strong>full URL</strong> from browser address bar"
+  },
+  "savePlexButton": {
+    "message": "💾 Save Plex Settings"
+  },
+  "testPlexButton": {
+    "message": "🧪 Test Plex Connection"
+  },
+  "clearPlexButton": {
+    "message": "🗑️ Clear Plex Settings"
+  },
+  "successPlexTest": {
+    "message": "✅ Connected to: {SERVER}"
+  },
+  "errorPlexTest": {
+    "message": "❌ Connection failed: {ERROR}"
+  },
+  "errorPlexIncomplete": {
+    "message": "Please provide both Plex token and URL, or leave both empty"
+  },
+  "errorPlexUrlInvalid": {
+    "message": "Plex URL must start with http:// or https://"
+  },
+  "errorSaveFailed": {
+    "message": "Failed to save Plex settings"
+  },
+  "successPlexSaved": {
+    "message": "✅ Plex settings saved! Reload Plex page to apply."
+  },
+  "confirmDeletePlex": {
+    "message": "Are you sure you want to clear Plex settings?"
+  },
+  "successPlexDeleted": {
+    "message": "🗑️ Plex settings cleared"
   }
 }

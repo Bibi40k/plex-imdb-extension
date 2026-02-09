@@ -98,11 +98,17 @@ const styles = `
     }
 `;
 
+// Inject styles (safe to do before DOM ready)
 const styleSheet = document.createElement('style');
 styleSheet.textContent = styles;
-document.head.appendChild(styleSheet);
-
-logger.info('Extension loaded', { url: location.href });
+if (document.head) {
+    document.head.appendChild(styleSheet);
+} else {
+    // If head not ready, wait for it
+    document.addEventListener('DOMContentLoaded', () => {
+        document.head.appendChild(styleSheet);
+    });
+}
 
 /**
  * Debounce utility function
@@ -354,32 +360,24 @@ function extractIMDbIdFromStructuredData(data) {
 }
 
 /**
- * Find IMDb ID for movie
+ * Find IMDb ID for movie - Strict search (title + year only)
  * HIGH FIX #6: Uses caching via OMDBClient
  * @param {{title: string, year: string|null}} movieInfo
  * @returns {Promise<string|null>}
  */
 async function findIMDbId(movieInfo) {
-    // Try to find IMDb ID in page first (faster, no API call)
-    const imdbIdFromPage = findIMDbIdInPage();
-    if (imdbIdFromPage) {
-        logger.info('IMDb ID found in page', { imdbId: imdbIdFromPage });
-        return imdbIdFromPage;
-    }
-
-    // Fall back to API search
+    // Use intelligent metadata resolver
+    // Priority: Page DOM > Plex API > OMDb API
     try {
-        const data = await omdbClient.searchByTitle(movieInfo.title, movieInfo.year || '');
-        const imdbId = data.imdbID;
-
+        const imdbId = await metadataResolver.resolveIMDbId(movieInfo);
         if (imdbId) {
-            logger.info('IMDb ID found via API', { imdbId, title: movieInfo.title });
             return imdbId;
         }
     } catch (error) {
-        logger.error('Failed to find IMDb ID', { error: error.message, movieInfo });
+        logger.error('Metadata resolution failed', { error: error.message, movieInfo });
     }
 
+    logger.warn('IMDb ID not found after all strategies', { title: movieInfo.title, year: movieInfo.year });
     return null;
 }
 
@@ -480,8 +478,7 @@ function createLoadingBadge() {
 }
 
 /**
- * Create error badge
- * HIGH FIX #7: User feedback for errors
+ * Create error badge for general errors
  * @param {string} message - Error message
  * @returns {HTMLSpanElement}
  */
@@ -490,7 +487,70 @@ function createErrorBadge(message) {
     badge.className = 'imdb-error-badge';
     badge.textContent = '⚠️';
     badge.title = message;
+    badge.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        font-size: 16px;
+        cursor: help;
+    `;
     return badge;
+}
+
+/**
+ * Create search button for when IMDb ID not found
+ * @param {{title: string, year: string|null}} movieInfo - Movie information
+ * @returns {HTMLAnchorElement}
+ */
+function createSearchButton(movieInfo) {
+    const link = document.createElement('a');
+    link.className = 'imdb-search-button';
+    link.href = `https://www.imdb.com/find?q=${encodeURIComponent(movieInfo.title)}${movieInfo.year ? '+' + movieInfo.year : ''}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.title = `Search for "${movieInfo.title}" on IMDb`;
+
+    // Style similar to other rating badges
+    link.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #1a1a1a;
+        border: 1px solid #555;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+        height: 24px;
+    `;
+
+    // Hover effect
+    link.addEventListener('mouseenter', () => {
+        link.style.background = '#2a2a2a';
+        link.style.borderColor = '#f5c518';
+    });
+    link.addEventListener('mouseleave', () => {
+        link.style.background = '#1a1a1a';
+        link.style.borderColor = '#555';
+    });
+
+    const logo = document.createElement('span');
+    logo.style.cssText = `
+        font-weight: bold;
+        color: #f5c518;
+        font-size: 11px;
+        font-family: Arial, sans-serif;
+    `;
+    logo.textContent = 'IMDb';
+    link.appendChild(logo);
+
+    const searchIcon = document.createElement('span');
+    searchIcon.style.cssText = 'color: #ccc; font-size: 14px;';
+    searchIcon.textContent = '🔍';
+    link.appendChild(searchIcon);
+
+    return link;
 }
 
 /**
@@ -541,9 +601,9 @@ async function addIMDbLink() {
         // Find IMDb ID
         const imdbId = await findIMDbId(movieInfo);
         if (!imdbId) {
-            logger.warn('IMDb ID not found', { movieInfo });
+            logger.warn('IMDb ID not found - showing search button', { movieInfo });
             loadingBadge?.remove();
-            ratingContainer.appendChild(createErrorBadge('IMDb ID not found'));
+            ratingContainer.appendChild(createSearchButton(movieInfo));
             return;
         }
 
@@ -646,15 +706,52 @@ function cleanup() {
 // Register cleanup handler
 window.addEventListener('unload', cleanup);
 
-// Initialize
-initializeUrlObserver();
+/**
+ * Main initialization function with dependency and DOM readiness checks
+ * HIGH FIX #6: Prevent race conditions in initialization
+ */
+function initialize() {
+    // Check if all required dependencies are loaded
+    const dependencies = {
+        logger: window.logger,
+        CONFIG: window.CONFIG,
+        apiCache: window.apiCache,
+        rateLimiter: window.rateLimiter,
+        metadataResolver: window.metadataResolver
+    };
 
-// Check if we're already on a movie page
-if (isMovieDetailsPage()) {
-    logger.info('Initial load on movie details page');
-    onUrlChange();
+    const missingDeps = Object.entries(dependencies)
+        .filter(([_, value]) => !value)
+        .map(([key, _]) => key);
+
+    if (missingDeps.length > 0) {
+        console.error('[PlexIMDB] Missing dependencies:', missingDeps);
+        // Retry initialization after a short delay
+        setTimeout(initialize, window.CONFIG?.INIT_RETRY_DELAY_MS || 100);
+        return;
+    }
+
+    // All dependencies loaded
+    logger.info('Extension loaded - all dependencies ready', { url: location.href });
+
+    // Initialize URL observer
+    initializeUrlObserver();
+
+    // Check if we're already on a movie page
+    if (isMovieDetailsPage()) {
+        logger.info('Initial load on movie details page');
+        onUrlChange();
+    }
+
+    logger.info('Content script initialized successfully');
 }
 
-logger.info('Content script initialized successfully');
+// Wait for DOM to be ready before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    // DOM already loaded, initialize immediately
+    initialize();
+}
 
 } // End of duplicate injection check

@@ -14,11 +14,22 @@ class RateLimiter {
     }
 
     /**
+     * Cleanup expired requests (internal helper)
+     * DRY REFACTOR: Extracted to avoid duplication
+     * @private
+     * @returns {number} Current timestamp
+     */
+    _cleanupExpired() {
+        const now = Date.now();
+        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        return now;
+    }
+
+    /**
      * Cleanup old requests and cap array size
      */
     cleanup() {
-        const now = Date.now();
-        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        this._cleanupExpired();
 
         // Hard cap to prevent unbounded growth in long sessions
         if (this.requests.length > this.maxRequests * 10) {
@@ -32,9 +43,17 @@ class RateLimiter {
 
     /**
      * Acquire a rate limit slot (waits if necessary)
+     * @param {number} depth - Recursion depth (internal use)
      * @returns {Promise<void>}
      */
-    async acquire() {
+    async acquire(depth = 0) {
+        // SECURITY: Prevent infinite recursion / stack overflow DoS
+        const MAX_RECURSION_DEPTH = 10;
+        if (depth >= MAX_RECURSION_DEPTH) {
+            logger.error('Rate limiter max recursion depth exceeded', { depth });
+            throw new Error('Rate limiter recursion limit exceeded - possible DoS attempt or timing issue');
+        }
+
         if (!CONFIG.FEATURES.ENABLE_RATE_LIMITING) {
             return; // Rate limiting disabled
         }
@@ -48,7 +67,7 @@ class RateLimiter {
             logger.warn(`Rate limit reached (${this.requests.length}/${this.maxRequests}), waiting ${waitTime}ms`);
 
             await new Promise(resolve => setTimeout(resolve, waitTime));
-            return this.acquire(); // Retry after waiting
+            return this.acquire(depth + 1); // Retry after waiting with incremented depth
         }
 
         this.requests.push(Date.now());
@@ -56,21 +75,21 @@ class RateLimiter {
 
     /**
      * Check if we can make a request without waiting
+     * DRY REFACTOR: Uses _cleanupExpired()
      * @returns {boolean}
      */
     canRequest() {
-        const now = Date.now();
-        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        this._cleanupExpired();
         return this.requests.length < this.maxRequests;
     }
 
     /**
      * Get current rate limit status
+     * DRY REFACTOR: Uses _cleanupExpired()
      * @returns {{remaining: number, total: number, resetIn: number}}
      */
     getStatus() {
-        const now = Date.now();
-        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        const now = this._cleanupExpired();
 
         const remaining = Math.max(0, this.maxRequests - this.requests.length);
         const resetIn = this.requests.length > 0
@@ -95,6 +114,7 @@ class RateLimiter {
 
 /**
  * Fetch with automatic retry and exponential backoff
+ * HIGH FIX #7: Ensure all code paths properly handle promise rejections
  * @param {string} url - URL to fetch
  * @param {object} options - Fetch options
  * @param {number} maxRetries - Maximum retry attempts
@@ -107,6 +127,8 @@ async function fetchWithRetry(url, options = {}, maxRetries = CONFIG.MAX_RETRY_A
     // Create abort controller for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), CONFIG.FETCH_TIMEOUT_MS);
+
+    let lastError = null;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -132,8 +154,11 @@ async function fetchWithRetry(url, options = {}, maxRetries = CONFIG.MAX_RETRY_A
 
             // Handle server errors with retry
             if (response.status >= 500) {
+                const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+                lastError = error;
+
                 if (attempt === maxRetries - 1) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw error;
                 }
 
                 const backoff = Math.min(
@@ -156,6 +181,7 @@ async function fetchWithRetry(url, options = {}, maxRetries = CONFIG.MAX_RETRY_A
 
         } catch (error) {
             clearTimeout(timeoutId);
+            lastError = error;
 
             // Handle timeout specifically
             if (error.name === 'AbortError') {
@@ -163,7 +189,7 @@ async function fetchWithRetry(url, options = {}, maxRetries = CONFIG.MAX_RETRY_A
             }
 
             if (attempt === maxRetries - 1) {
-                logger.error('Fetch failed after retries', { error, url, attempts: maxRetries });
+                logger.error('Fetch failed after retries', { error: error.message, url, attempts: maxRetries });
                 throw error;
             }
 
@@ -177,6 +203,10 @@ async function fetchWithRetry(url, options = {}, maxRetries = CONFIG.MAX_RETRY_A
             await new Promise(resolve => setTimeout(resolve, backoff));
         }
     }
+
+    // SAFETY: Ensure we never exit without returning or throwing
+    // If we somehow reach here, throw the last error or a generic error
+    throw lastError || new Error('Fetch failed after all retries with unknown error');
 }
 
     // Export to window

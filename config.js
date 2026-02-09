@@ -10,6 +10,7 @@ if (typeof window.CONFIG === 'undefined') {
     DOM_POLL_INTERVAL_MS: 500,
     DOM_POLL_TIMEOUT_MS: 10000,
     URL_CHANGE_DEBOUNCE_MS: 300,
+    INIT_RETRY_DELAY_MS: 100, // Delay before retrying initialization if dependencies missing
 
     // UI feedback delays
     BUTTON_RESET_DELAY_MS: 2000,
@@ -33,6 +34,10 @@ if (typeof window.CONFIG === 'undefined') {
     OMDB_BASE_URL: 'https://www.omdbapi.com/',
     OMDB_TEST_MOVIE: 'Inception',
     OMDB_TEST_YEAR: '2010',
+
+    // Plex API configuration
+    PLEX_API_TIMEOUT_MS: 5000, // Faster timeout for local server
+    PLEX_DEFAULT_URL: '', // Empty by default - user must configure
 
     // Selectors - using data-testid for stability
     SELECTORS: {

@@ -1,16 +1,12 @@
-name: Create Release
+name: Release
 
 on:
   push:
     tags:
-      - 'v*.*.*'
-
-permissions:
-  contents: write
+      - 'v*'  # Triggers on version tags like v0.2.0
 
 jobs:
-  release:
-    name: Create Release
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,96 +14,74 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Create extension package
+      - name: Build Chrome package
         run: |
-          # Create a clean directory for the extension
-          mkdir -p extension-package
+          mkdir -p dist/chrome
 
-          # Copy all necessary files (exclude .git, .github, screenshots, etc.)
-          cp -r \
-            manifest.json \
-            config.js \
-            logger.js \
-            cache.js \
-            rate-limiter.js \
-            api-client.js \
-            content.js \
-            background.js \
-            popup.html \
-            popup.js \
-            icons/ \
-            _locales/ \
-            extension-package/
+          # Copy common files
+          cp -r icons _locales *.js *.html *.css dist/chrome/ 2>/dev/null || true
 
-          # Create zip file
-          cd extension-package
-          zip -r ../plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip .
-          cd ..
+          # Copy Chrome-specific files
+          cp manifest-chrome.json dist/chrome/manifest.json
+          cp background-chrome.js dist/chrome/background.js
 
-          # Cleanup
-          rm -rf extension-package
+          # Remove Firefox-specific files
+          rm -f dist/chrome/background-firefox.js
+          rm -f dist/chrome/manifest-firefox.json
+          rm -f dist/chrome/manifest-backup.json
 
-      - name: Generate release notes
-        id: generate_notes
+          # Create zip
+          cd dist/chrome
+          zip -r ../plex-imdb-extension-chrome-v${{ steps.version.outputs.VERSION }}.zip . \
+            -x "*.DS_Store" -x "*.git*" -x "*firefox*"
+          cd ../..
+
+      - name: Build Firefox package
         run: |
-          cat > release-notes.md << 'EOF'
-          # 🎬 Plex IMDb Enhancer
+          mkdir -p dist/firefox
 
-          Add clickable IMDb ratings to Plex Web!
+          # Copy common files
+          cp -r icons _locales *.js *.html *.css dist/firefox/ 2>/dev/null || true
 
-          ## 📦 Installation
+          # Copy Firefox-specific files
+          cp manifest-firefox.json dist/firefox/manifest.json
+          cp background-firefox.js dist/firefox/background.js
 
-          ### Chrome/Edge/Brave
-          1. Download `plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip`
-          2. Extract the zip file
-          3. Open `chrome://extensions/`
-          4. Enable "Developer mode"
-          5. Click "Load unpacked"
-          6. Select the extracted folder
+          # Remove Chrome-specific files
+          rm -f dist/firefox/background-chrome.js
+          rm -f dist/firefox/manifest-chrome.json
+          rm -f dist/firefox/manifest-backup.json
 
-          ### Firefox
-          1. Download `plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip`
-          2. Extract the zip file
-          3. Open `about:debugging#/runtime/this-firefox`
-          4. Click "Load Temporary Add-on"
-          5. Select `manifest.json` from the extracted folder
+          # Create zip
+          cd dist/firefox
+          zip -r ../plex-imdb-extension-firefox-v${{ steps.version.outputs.VERSION }}.zip . \
+            -x "*.DS_Store" -x "*.git*" -x "*chrome*"
+          cd ../..
 
-          ## ⚙️ Setup
-
-          1. Get free OMDb API key from [omdbapi.com/apikey.aspx](http://www.omdbapi.com/apikey.aspx)
-          2. Click extension icon in browser toolbar
-          3. Enter API key and click Save
-          4. Open Plex Web and enjoy IMDb ratings!
-
-          ## 📋 Requirements
-
-          - Chrome/Edge/Brave (v88+) or Firefox (v109+)
-          - Free OMDb API key (1,000 requests/day)
-          - Plex Web account
-
-          ---
-
-          See [README](https://github.com/Bibi40k/plex-imdb-extension#readme) for full documentation.
-          EOF
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Release ${{ steps.get_version.outputs.VERSION }}
-          body_path: release-notes.md
           files: |
-            plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip
+            dist/plex-imdb-extension-chrome-v${{ steps.version.outputs.VERSION }}.zip
+            dist/plex-imdb-extension-firefox-v${{ steps.version.outputs.VERSION }}.zip
+          body: |
+            ## Plex IMDb Enhancer v${{ steps.version.outputs.VERSION }}
+
+            Download the appropriate package for your browser:
+
+            - **Chrome/Edge/Brave**: \`plex-imdb-extension-chrome-v${{ steps.version.outputs.VERSION }}.zip\`
+              - Upload to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+
+            - **Firefox**: \`plex-imdb-extension-firefox-v${{ steps.version.outputs.VERSION }}.zip\`
+              - Upload to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/developers)
+
+            ### Installation
+
+            See [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) for installation instructions.
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Release summary
-        run: |
-          echo "✅ Release ${{ steps.get_version.outputs.VERSION }} created successfully!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📦 Package: plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.VERSION }})" >> $GITHUB_STEP_SUMMARY

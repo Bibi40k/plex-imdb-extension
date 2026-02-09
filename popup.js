@@ -9,29 +9,56 @@
 // Simple logger for popup (logger instance comes from logger.js)
 // popupLogger is already defined in logger.js
 
-// DOM elements
+// DOM elements - OMDb
 let apiKeyInput, saveButton, testButton, clearButton, status, currentKeyDiv, keyValue, toggleKeyVisibility;
 
+// DOM elements - Plex
+let plexToggle, plexContent, plexTokenInput, plexUrlInput, savePlexButton, testPlexButton, clearPlexButton, plexStatus, togglePlexVisibility, quickSetupInput, quickSetupStatus;
+
 /**
- * Sanitize HTML - only allow specific safe tags
+ * Sanitize HTML - only allow specific safe tags WITHOUT attributes
+ * SECURITY: Prevents XSS by stripping all attributes (onclick, onload, etc.)
  * @param {string} html - HTML string to sanitize
- * @param {string[]} allowedTags - Tags to allow
+ * @param {string[]} allowedTags - Tags to allow (without attributes)
  * @returns {string} Sanitized HTML
  */
-function sanitizeHTML(html, allowedTags = ['strong', 'em', 'br']) {
+function sanitizeHTML(html, allowedTags = ['strong', 'em', 'br', 'code']) {
     const temp = document.createElement('div');
-    temp.textContent = html; // First escape everything
-    let result = temp.innerHTML;
+    temp.innerHTML = html;
 
-    // Only restore explicitly allowed tags
-    allowedTags.forEach(tag => {
-        const openRegex = new RegExp(`&lt;${tag}&gt;`, 'gi');
-        const closeRegex = new RegExp(`&lt;/${tag}&gt;`, 'gi');
-        result = result.replace(openRegex, `<${tag}>`);
-        result = result.replace(closeRegex, `</${tag}>`);
+    // Whitelist approach: only keep allowed tags without attributes
+    const walker = document.createTreeWalker(
+        temp,
+        NodeFilter.SHOW_ELEMENT,
+        null,
+        false
+    );
+
+    const nodesToRemove = [];
+    let currentNode = walker.currentNode;
+
+    while (currentNode) {
+        const tagName = currentNode.tagName.toLowerCase();
+
+        if (!allowedTags.includes(tagName)) {
+            // Tag not allowed - remove it but keep its children
+            nodesToRemove.push(currentNode);
+        } else {
+            // Tag allowed - but remove ALL attributes to prevent XSS
+            while (currentNode.attributes.length > 0) {
+                currentNode.removeAttribute(currentNode.attributes[0].name);
+            }
+        }
+
+        currentNode = walker.nextNode();
+    }
+
+    // Remove disallowed tags (replace with their text content)
+    nodesToRemove.forEach(node => {
+        node.replaceWith(...node.childNodes);
     });
 
-    return result;
+    return temp.innerHTML;
 }
 
 /**
@@ -47,9 +74,9 @@ function initializeI18n() {
                 document.title = message;
             } else {
                 // Check if message contains HTML tags
-                if (message.includes('<strong>') || message.includes('<em>') || message.includes('<br>')) {
+                if (message.includes('<strong>') || message.includes('<em>') || message.includes('<br>') || message.includes('<code>')) {
                     // Sanitize HTML - only allow safe tags
-                    element.innerHTML = sanitizeHTML(message, ['strong', 'em', 'br']);
+                    element.innerHTML = sanitizeHTML(message, ['strong', 'em', 'br', 'code']);
                 } else {
                     // Use textContent for safety
                     element.textContent = message;
@@ -69,7 +96,7 @@ function initializeI18n() {
     popupLogger.info('i18n initialized', { locale: chrome.i18n.getUILanguage() });
 }
 
-// Get DOM elements
+// Get DOM elements - OMDb
 apiKeyInput = document.getElementById('apiKeyInput');
 saveButton = document.getElementById('saveButton');
 testButton = document.getElementById('testButton');
@@ -78,6 +105,19 @@ status = document.getElementById('status');
 currentKeyDiv = document.getElementById('currentKey');
 keyValue = document.getElementById('keyValue');
 toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
+
+// Get DOM elements - Plex
+plexToggle = document.getElementById('plexToggle');
+plexContent = document.getElementById('plexContent');
+quickSetupInput = document.getElementById('quickSetupInput');
+quickSetupStatus = document.getElementById('quickSetupStatus');
+plexTokenInput = document.getElementById('plexTokenInput');
+plexUrlInput = document.getElementById('plexUrlInput');
+savePlexButton = document.getElementById('savePlexButton');
+testPlexButton = document.getElementById('testPlexButton');
+clearPlexButton = document.getElementById('clearPlexButton');
+plexStatus = document.getElementById('plexStatus');
+togglePlexVisibility = document.getElementById('togglePlexVisibility');
 
 // Initialize translations
 initializeI18n();
@@ -94,51 +134,34 @@ toggleKeyVisibility.addEventListener('click', () => {
 });
 
 // Load existing API key
-chrome.storage.sync.get(['omdbApiKey'], (result) => {
+// DRY REFACTOR: Using StorageUtils
+(async () => {
+    const result = await storageUtils.get(['omdbApiKey'], { omdbApiKey: null });
     if (result.omdbApiKey) {
         apiKeyInput.value = result.omdbApiKey;
         // Don't show "Current key" since it's already visible in input field
         popupLogger.info('Existing API key loaded');
     }
-});
+})();
 
 /**
  * Validate API key format
- * MEDIUM FIX #12: Input validation
+ * DRY REFACTOR: Using InputValidator utility (reduces duplication)
  * @param {string} apiKey - API key to validate
  * @returns {{valid: boolean, error: string|null}}
  */
 function validateApiKey(apiKey) {
-    if (!apiKey) {
-        return { valid: false, error: chrome.i18n.getMessage('errorNoApiKey') };
-    }
-
-    // OMDB API keys are 8 character hexadecimal
-    if (!CONFIG.PATTERNS.API_KEY.test(apiKey)) {
-        return {
-            valid: false,
-            error: chrome.i18n.getMessage('errorInvalidFormat')
-        };
-    }
-
-    // Check for common test/placeholder keys
-    const invalidKeys = [
-        'test1234',
-        '12345678',
-        'abcdefgh',
-        'aaaaaaaa',
-        '00000000',
-        'ffffffff'
-    ];
-
-    if (invalidKeys.includes(apiKey.toLowerCase())) {
-        return {
-            valid: false,
-            error: chrome.i18n.getMessage('errorPlaceholder')
-        };
-    }
-
-    return { valid: true, error: null };
+    return InputValidator.validate(apiKey, [
+        InputValidator.required(chrome.i18n.getMessage('errorNoApiKey')),
+        InputValidator.pattern(
+            CONFIG.PATTERNS.API_KEY,
+            chrome.i18n.getMessage('errorInvalidFormat')
+        ),
+        InputValidator.blacklist(
+            ['test1234', '12345678', 'abcdefgh', 'aaaaaaaa', '00000000', 'ffffffff'],
+            chrome.i18n.getMessage('errorPlaceholder')
+        )
+    ]);
 }
 
 /**
@@ -176,16 +199,18 @@ async function testApiKey(apiKey) {
 
 /**
  * Show status message to user
+ * DRY REFACTOR: Unified function for both OMDb and Plex status messages
  * @param {string} message - Status message
  * @param {string} type - Message type (success, error)
+ * @param {HTMLElement} statusElement - Optional status element (defaults to main status)
  */
-function showStatus(message, type) {
-    status.textContent = message;
-    status.className = `status ${type}`;
-    status.style.display = 'block';
+function showStatus(message, type, statusElement = status) {
+    statusElement.textContent = message;
+    statusElement.className = `status ${type}`;
+    statusElement.style.display = 'block';
 
     setTimeout(() => {
-        status.style.display = 'none';
+        statusElement.style.display = 'none';
     }, CONFIG.STATUS_DISPLAY_DURATION_MS);
 }
 
@@ -246,8 +271,10 @@ saveButton.addEventListener('click', async () => {
     const isValid = await testApiKey(apiKey);
 
     if (isValid) {
-        // Save to storage
-        chrome.storage.sync.set({ omdbApiKey: apiKey }, () => {
+        // Save to storage - DRY REFACTOR: Using StorageUtils
+        const saved = await storageUtils.set({ omdbApiKey: apiKey });
+
+        if (saved) {
             setButtonState(saveButton, chrome.i18n.getMessage('buttonSaved'), false);
             apiKeyInput.classList.remove('error');
             apiKeyInput.classList.add('success');
@@ -259,7 +286,10 @@ saveButton.addEventListener('click', async () => {
                 setButtonState(saveButton, chrome.i18n.getMessage('saveButton'), false);
                 apiKeyInput.classList.remove('success');
             }, CONFIG.BUTTON_RESET_DELAY_MS);
-        });
+        } else {
+            setButtonState(saveButton, chrome.i18n.getMessage('buttonInvalidKey'), false);
+            showStatus('Failed to save API key', 'error');
+        }
     } else {
         setButtonState(saveButton, chrome.i18n.getMessage('buttonInvalidKey'), false);
         apiKeyInput.classList.add('error');
@@ -314,17 +344,22 @@ testButton.addEventListener('click', async () => {
 
 /**
  * Clear API key
+ * DRY REFACTOR: Using StorageUtils
  */
-clearButton.addEventListener('click', () => {
+clearButton.addEventListener('click', async () => {
     if (confirm(chrome.i18n.getMessage('confirmDelete'))) {
-        chrome.storage.sync.remove(['omdbApiKey'], () => {
+        const removed = await storageUtils.remove(['omdbApiKey']);
+
+        if (removed) {
             apiKeyInput.value = '';
             apiKeyInput.classList.remove('error', 'success');
             currentKeyDiv.style.display = 'none';
             showStatus(chrome.i18n.getMessage('successDeleted'), 'success');
 
             popupLogger.info('API key cleared');
-        });
+        } else {
+            showStatus('Failed to clear API key', 'error');
+        }
     }
 });
 
@@ -342,6 +377,372 @@ apiKeyInput.addEventListener('keypress', (e) => {
  */
 apiKeyInput.addEventListener('input', () => {
     apiKeyInput.classList.remove('error', 'success');
+});
+
+// ============================================================================
+// PLEX CONFIGURATION HANDLERS
+// ============================================================================
+
+/**
+ * Show Plex status message
+ * DRY REFACTOR: Now uses unified showStatus() function
+ */
+function showPlexStatus(message, type) {
+    showStatus(message, type, plexStatus);
+}
+
+/**
+ * Validate Plex token format and length
+ * DRY REFACTOR: Using InputValidator utility (reduces duplication)
+ * @param {string} token - Plex token to validate
+ * @returns {{valid: boolean, error?: string}}
+ */
+function validatePlexToken(token) {
+    return InputValidator.validate(token, [
+        InputValidator.required('Plex token is required'),
+        InputValidator.maxLength(100, 'Plex token too long (max 100 characters)'),
+        InputValidator.pattern(
+            /^[a-zA-Z0-9_-]+$/,
+            'Invalid token format (alphanumeric, hyphens, underscores only)'
+        )
+    ]);
+}
+
+/**
+ * Validate Plex server URL format and length
+ * DRY REFACTOR: Using InputValidator utility (reduces duplication)
+ * @param {string} url - Plex server URL to validate
+ * @returns {{valid: boolean, error?: string}}
+ */
+function validatePlexUrl(url) {
+    return InputValidator.validate(url, [
+        InputValidator.required('Plex server URL is required'),
+        InputValidator.maxLength(300, 'URL too long (max 300 characters)'),
+        InputValidator.url('Invalid URL format', {
+            allowedProtocols: ['http:', 'https:'],
+            requireHttpsForRemote: true
+        })
+    ]);
+}
+
+/**
+ * Collapsible toggle for advanced settings
+ */
+plexToggle.addEventListener('click', () => {
+    plexContent.classList.toggle('open');
+    popupLogger.debug('Advanced settings toggled');
+});
+
+/**
+ * Quick Setup - Extract token and URL from pasted XML URL
+ */
+quickSetupInput.addEventListener('paste', (e) => {
+    // Let the paste happen first
+    setTimeout(() => {
+        const pastedUrl = quickSetupInput.value.trim();
+
+        popupLogger.info('Quick setup - processing pasted URL', {
+            urlLength: pastedUrl.length,
+            hasToken: pastedUrl.includes('X-Plex-Token')
+        });
+
+        // Extract token: X-Plex-Token=abc123
+        const tokenMatch = pastedUrl.match(/X-Plex-Token=([^&\s]+)/);
+        const token = tokenMatch ? tokenMatch[1] : null;
+
+        // Extract server URL: https://...plex.direct:32400 (everything before /library or first path)
+        const serverMatch = pastedUrl.match(/(https?:\/\/[^\/\s]+)/);
+        const serverUrl = serverMatch ? serverMatch[1] : null;
+
+        popupLogger.info('Quick setup - extraction result', {
+            hasToken: !!token,
+            hasServerUrl: !!serverUrl,
+            tokenLength: token?.length,
+            serverUrl
+        });
+
+        // Validate and populate
+        if (token && serverUrl) {
+            // Success! Populate fields
+            plexTokenInput.value = token;
+            plexUrlInput.value = serverUrl;
+
+            // AUTO-SAVE to storage immediately! - DRY REFACTOR: Using StorageUtils
+            (async () => {
+                const saved = await storageUtils.set({ plexToken: token, plexUrl: serverUrl });
+
+                if (!saved) {
+                    quickSetupStatus.className = 'error';
+                    quickSetupStatus.textContent = '❌ ' + (chrome.i18n.getMessage('errorSaveFailed') ||
+                        'Failed to save settings');
+                    popupLogger.error('Quick setup - save failed');
+                    return;
+                }
+
+                // Show success message
+                quickSetupStatus.className = 'success';
+                quickSetupStatus.innerHTML = '✅ ' + (chrome.i18n.getMessage('quickSetupSuccess') ||
+                    `Extracted & saved!<br>Token: ${token.substring(0, 8)}...<br>Server: ${serverUrl}`);
+
+                popupLogger.info('Quick setup successful - saved to storage');
+
+                // Clear quick setup input
+                setTimeout(() => {
+                    quickSetupInput.value = '';
+                }, 500);
+
+                // Hide status after delay
+                setTimeout(() => {
+                    quickSetupStatus.style.display = 'none';
+                }, 5000);
+            })();
+
+        } else if (!pastedUrl.includes('X-Plex-Token')) {
+            // Not a Plex XML URL
+            quickSetupStatus.className = 'error';
+            quickSetupStatus.textContent = '❌ ' + (chrome.i18n.getMessage('quickSetupInvalid') ||
+                'Invalid URL. Please paste the full URL from "View XML" (must contain X-Plex-Token)');
+
+            setTimeout(() => {
+                quickSetupStatus.style.display = 'none';
+            }, 5000);
+
+            popupLogger.warn('Quick setup failed - not a Plex XML URL');
+
+        } else {
+            // Has token but couldn't extract properly
+            quickSetupStatus.className = 'error';
+            quickSetupStatus.textContent = '❌ ' + (chrome.i18n.getMessage('quickSetupExtractionFailed') ||
+                'Could not extract token/URL. Please check the URL format.');
+
+            setTimeout(() => {
+                quickSetupStatus.style.display = 'none';
+            }, 5000);
+
+            popupLogger.warn('Quick setup failed - extraction error', {
+                hasToken: !!token,
+                hasServerUrl: !!serverUrl
+            });
+        }
+    }, 10);
+});
+
+/**
+ * Toggle Plex token visibility
+ */
+togglePlexVisibility.addEventListener('click', () => {
+    if (plexTokenInput.type === 'password') {
+        plexTokenInput.type = 'text';
+        togglePlexVisibility.textContent = '🙈';
+    } else {
+        plexTokenInput.type = 'password';
+        togglePlexVisibility.textContent = '👁️';
+    }
+});
+
+/**
+ * Load existing Plex settings
+ * DRY REFACTOR: Using StorageUtils
+ */
+(async () => {
+    const result = await storageUtils.get(['plexToken', 'plexUrl'], {
+        plexToken: null,
+        plexUrl: null
+    });
+
+    if (result.plexToken) {
+        plexTokenInput.value = result.plexToken;
+        popupLogger.info('Plex token loaded');
+    }
+
+    if (result.plexUrl) {
+        plexUrlInput.value = result.plexUrl;
+        popupLogger.info('Plex URL loaded');
+    }
+    // Note: No default URL - user must configure from XML URL
+})();
+
+/**
+ * Test Plex connection via background service worker (bypasses CORS)
+ * @param {string} plexToken - Plex token
+ * @param {string} plexUrl - Plex server URL
+ * @returns {Promise<{success: boolean, serverName?: string, error?: string}>}
+ */
+async function testPlexConnection(plexToken, plexUrl) {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+            {
+                type: 'testPlexConnection',
+                plexToken,
+                plexUrl
+            },
+            (response) => {
+                if (chrome.runtime.lastError) {
+                    resolve({
+                        success: false,
+                        error: chrome.runtime.lastError.message
+                    });
+                } else {
+                    resolve(response);
+                }
+            }
+        );
+    });
+}
+
+/**
+ * Test Plex connection button
+ */
+testPlexButton.addEventListener('click', async () => {
+    const plexToken = plexTokenInput.value.trim();
+    const plexUrl = plexUrlInput.value.trim();
+
+    // Validate token
+    const tokenValidation = validatePlexToken(plexToken);
+    if (!tokenValidation.valid) {
+        showPlexStatus(tokenValidation.error, 'error');
+        plexTokenInput.classList.add('error');
+        return;
+    }
+
+    // Validate URL
+    const urlValidation = validatePlexUrl(plexUrl);
+    if (!urlValidation.valid) {
+        showPlexStatus(urlValidation.error, 'error');
+        plexUrlInput.classList.add('error');
+        return;
+    }
+
+    setButtonState(testPlexButton, chrome.i18n.getMessage('buttonTesting') || '⏳ Testing...', true);
+
+    const result = await testPlexConnection(plexToken, plexUrl);
+
+    if (result.success) {
+        setButtonState(testPlexButton, chrome.i18n.getMessage('buttonValid') || '✅ Valid!', false);
+        showPlexStatus(
+            (chrome.i18n.getMessage('successPlexTest') || '✅ Connected to: {SERVER}').replace('{SERVER}', result.serverName),
+            'success'
+        );
+        plexTokenInput.classList.remove('error');
+        plexUrlInput.classList.remove('error');
+        plexTokenInput.classList.add('success');
+        plexUrlInput.classList.add('success');
+
+        popupLogger.info('Plex connection test passed', result);
+    } else {
+        setButtonState(testPlexButton, chrome.i18n.getMessage('buttonInvalid') || '❌ Invalid!', false);
+        showPlexStatus(
+            (chrome.i18n.getMessage('errorPlexTest') || '❌ Connection failed: {ERROR}').replace('{ERROR}', result.error),
+            'error'
+        );
+        plexTokenInput.classList.add('error');
+        plexUrlInput.classList.add('error');
+
+        popupLogger.warn('Plex connection test failed', result);
+    }
+
+    setTimeout(() => {
+        setButtonState(testPlexButton, chrome.i18n.getMessage('testPlexButton') || '🧪 Test Plex Connection', false);
+        plexTokenInput.classList.remove('success');
+        plexUrlInput.classList.remove('success');
+    }, CONFIG.BUTTON_RESET_DELAY_MS);
+});
+
+/**
+ * Save Plex settings
+ * DRY REFACTOR: Now async to use StorageUtils
+ */
+savePlexButton.addEventListener('click', async () => {
+    const plexToken = plexTokenInput.value.trim();
+    const plexUrl = plexUrlInput.value.trim();
+
+    // Both token and URL are optional
+    // If user provides one, they should provide both
+    if ((plexToken && !plexUrl) || (!plexToken && plexUrl)) {
+        showPlexStatus(
+            chrome.i18n.getMessage('errorPlexIncomplete') || 'Please provide both Plex token and URL, or leave both empty',
+            'error'
+        );
+        return;
+    }
+
+    // Validate token if provided
+    if (plexToken) {
+        const tokenValidation = validatePlexToken(plexToken);
+        if (!tokenValidation.valid) {
+            showPlexStatus(tokenValidation.error, 'error');
+            plexTokenInput.classList.add('error');
+            return;
+        }
+    }
+
+    // Validate URL if provided
+    if (plexUrl) {
+        const urlValidation = validatePlexUrl(plexUrl);
+        if (!urlValidation.valid) {
+            showPlexStatus(urlValidation.error, 'error');
+            plexUrlInput.classList.add('error');
+            return;
+        }
+    }
+
+    // Save to storage - DRY REFACTOR: Using StorageUtils
+    const saved = await storageUtils.set({ plexToken, plexUrl });
+
+    if (!saved) {
+        showPlexStatus(
+            chrome.i18n.getMessage('errorSaveFailed') || 'Failed to save Plex settings',
+            'error'
+        );
+        popupLogger.error('Failed to save Plex settings');
+        return;
+    }
+
+    setButtonState(savePlexButton, chrome.i18n.getMessage('buttonSaved') || '✅ Saved', false);
+    showPlexStatus(
+        chrome.i18n.getMessage('successPlexSaved') || '✅ Plex settings saved! Reload Plex page to apply.',
+        'success'
+    );
+
+    popupLogger.info('Plex settings saved successfully');
+
+    setTimeout(() => {
+        setButtonState(savePlexButton, chrome.i18n.getMessage('savePlexButton') || '💾 Save Plex Settings', false);
+    }, CONFIG.BUTTON_RESET_DELAY_MS);
+});
+
+/**
+ * Clear Plex settings
+ * DRY REFACTOR: Using StorageUtils
+ */
+clearPlexButton.addEventListener('click', async () => {
+    if (confirm(chrome.i18n.getMessage('confirmDeletePlex') || 'Are you sure you want to clear Plex settings?')) {
+        const removed = await storageUtils.remove(['plexToken', 'plexUrl']);
+
+        if (removed) {
+            plexTokenInput.value = '';
+            plexUrlInput.value = '';
+            showPlexStatus(
+                chrome.i18n.getMessage('successPlexDeleted') || '🗑️ Plex settings cleared',
+                'success'
+            );
+
+            popupLogger.info('Plex settings cleared');
+        } else {
+            showPlexStatus('Failed to clear Plex settings', 'error');
+        }
+    }
+});
+
+/**
+ * Remove error state on Plex input
+ */
+plexTokenInput.addEventListener('input', () => {
+    plexTokenInput.classList.remove('error', 'success');
+});
+
+plexUrlInput.addEventListener('input', () => {
+    plexUrlInput.classList.remove('error', 'success');
 });
 
 popupLogger.info('Popup initialized successfully');
