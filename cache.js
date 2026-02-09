@@ -114,16 +114,39 @@ class LRUCache {
     }
 
     /**
-     * Get cache size in bytes (approximate)
+     * Get cache size in bytes (approximate, optimized with sampling)
      * @returns {number}
      */
     getSizeBytes() {
-        let size = 0;
-        for (const [key, item] of this.cache.entries()) {
-            size += key.length * 2; // UTF-16
-            size += JSON.stringify(item.value).length * 2;
+        // Cache the result for 1 minute to avoid expensive recalculation
+        if (this._cachedSize && this._cacheSizeTimestamp > Date.now() - 60000) {
+            return this._cachedSize;
         }
-        return size;
+
+        let size = 0;
+        let count = 0;
+        const maxSampleSize = 10; // Sample for estimation
+
+        for (const [key, item] of this.cache.entries()) {
+            if (count < maxSampleSize) {
+                size += key.length * 2; // UTF-16
+                try {
+                    size += JSON.stringify(item.value).length * 2;
+                } catch (e) {
+                    size += 1000; // Estimate for circular refs
+                }
+                count++;
+            } else {
+                // Estimate remaining based on average
+                const avgSize = size / count;
+                size += avgSize * (this.cache.size - count);
+                break;
+            }
+        }
+
+        this._cachedSize = Math.round(size);
+        this._cacheSizeTimestamp = Date.now();
+        return this._cachedSize;
     }
 }
 

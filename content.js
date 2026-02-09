@@ -234,14 +234,17 @@ function extractMovieInfo() {
         return null;
     }
 
-    const title = titleElement.textContent.trim();
+    // Limit input length to prevent ReDoS attacks
+    const title = titleElement.textContent.trim().substring(0, 500);
 
     // Extract year from metadata-line1 (format: "2023    1hr 54min    PG-13")
     const metadataLine1 = document.querySelector(CONFIG.SELECTORS.METADATA_LINE1);
     let year = null;
 
     if (metadataLine1) {
-        const yearMatch = metadataLine1.textContent.match(/^(\d{4})/);
+        // Limit metadata length to prevent ReDoS
+        const metadata = metadataLine1.textContent.substring(0, 100);
+        const yearMatch = metadata.match(/^(\d{4})/);
         if (yearMatch && CONFIG.PATTERNS.YEAR.test(yearMatch[1])) {
             year = yearMatch[1];
             logger.debug('Year extracted from metadata', { year });
@@ -552,14 +555,30 @@ async function addIMDbLink() {
         // Replace loading badge with actual link
         loadingBadge?.remove();
 
-        const imdbLink = createIMDbLink(imdbId, imdbData.rating, imdbData.votes);
-        ratingContainer.appendChild(imdbLink);
+        // Validate DOM before insertion
+        if (!document.body.contains(ratingContainer)) {
+            logger.warn('Rating container removed from DOM, aborting');
+            return;
+        }
 
-        logger.info('IMDb link added successfully', {
-            imdbId,
-            rating: imdbData.rating,
-            title: movieInfo.title
-        });
+        // Check if container is visible
+        if (ratingContainer.offsetParent === null) {
+            logger.warn('Rating container is hidden, may not be the right element');
+        }
+
+        const imdbLink = createIMDbLink(imdbId, imdbData.rating, imdbData.votes);
+
+        // Verify we're not duplicating (extra safety)
+        if (!ratingContainer.querySelector(CONFIG.SELECTORS.IMDB_LINK)) {
+            ratingContainer.appendChild(imdbLink);
+            logger.info('IMDb link added successfully', {
+                imdbId,
+                rating: imdbData.rating,
+                title: movieInfo.title
+            });
+        } else {
+            logger.debug('IMDb link already exists, skipping');
+        }
 
     } catch (error) {
         logger.error('Error in addIMDbLink', {

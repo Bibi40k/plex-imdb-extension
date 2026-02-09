@@ -16,7 +16,20 @@ const bgLog = {
 
 // Track injected tabs to prevent duplicates
 // CRITICAL FIX #2: Prevent duplicate script injection
-const injectedTabs = new Set();
+let injectedTabs = new Set();
+
+// Restore state on service worker startup
+chrome.storage.local.get(['injectedTabs'], (result) => {
+    if (result.injectedTabs) {
+        injectedTabs = new Set(result.injectedTabs);
+        bgLog.info('Restored injected tabs', { count: injectedTabs.size });
+    }
+});
+
+// Persist injected tabs state
+function saveInjectedTabs() {
+    chrome.storage.local.set({ injectedTabs: Array.from(injectedTabs) });
+}
 
 bgLog.info('Background service worker started');
 
@@ -88,6 +101,7 @@ async function injectContentScript(tabId, url) {
         }
 
         injectedTabs.add(tabId);
+        saveInjectedTabs();
         bgLog.info('Content script injected successfully', { tabId, url });
 
     } catch (error) {
@@ -99,6 +113,7 @@ async function injectContentScript(tabId, url) {
 
         // Remove from tracking if injection failed
         injectedTabs.delete(tabId);
+        saveInjectedTabs();
     }
 }
 
@@ -125,6 +140,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
     if (injectedTabs.has(tabId)) {
         injectedTabs.delete(tabId);
+        saveInjectedTabs();
         bgLog.debug('Tab removed from tracking', { tabId });
     }
 });
