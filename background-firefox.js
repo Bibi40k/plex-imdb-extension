@@ -38,13 +38,21 @@ bgLog.info('Background service worker started');
 /**
  * Handle extension installation
  */
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'install') {
         bgLog.info('Extension installed for the first time');
-        // Open popup for initial configuration
-        chrome.action.openPopup().catch(error => {
-            bgLog.warn('Could not open popup automatically', { error: error.message });
-        });
+
+        // Check if API key exists
+        const result = await chrome.storage.sync.get(['omdbApiKey']);
+
+        if (!result.omdbApiKey) {
+            // No API key found - open popup in a new tab for setup
+            chrome.tabs.create({
+                url: chrome.runtime.getURL('popup.html'),
+                active: true
+            });
+            bgLog.info('Opened setup page for first-time configuration');
+        }
     } else if (details.reason === 'update') {
         const previousVersion = details.previousVersion;
         const currentVersion = chrome.runtime.getManifest().version;

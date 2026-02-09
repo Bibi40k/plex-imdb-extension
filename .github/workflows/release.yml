@@ -21,44 +21,59 @@ jobs:
         run: |
           mkdir -p dist/chrome
 
-          # Copy common files
-          cp -r icons _locales *.js *.html *.css dist/chrome/ 2>/dev/null || true
+          # Copy common files (exclude browser-specific files)
+          cp -r icons _locales dist/chrome/
+          cp *.html dist/chrome/ 2>/dev/null || true
+
+          # Copy JavaScript files (exclude browser-specific background files)
+          for file in *.js; do
+            if [[ "$file" != "background-chrome.js" && "$file" != "background-firefox.js" ]]; then
+              cp "$file" dist/chrome/
+            fi
+          done
 
           # Copy Chrome-specific files
           cp manifest-chrome.json dist/chrome/manifest.json
           cp background-chrome.js dist/chrome/background.js
 
-          # Remove Firefox-specific files
-          rm -f dist/chrome/background-firefox.js
-          rm -f dist/chrome/manifest-firefox.json
-          rm -f dist/chrome/manifest-backup.json
-
-          # Create zip
+          # Create zip (exclude unnecessary files)
           cd dist/chrome
           zip -r ../plex-imdb-extension-chrome-v${{ steps.version.outputs.VERSION }}.zip . \
-            -x "*.DS_Store" -x "*.git*" -x "*firefox*"
+            -x "*.DS_Store" -x "*.git*" -x "*.md" -x "*screenshots*" -x "*.sh"
           cd ../..
 
       - name: Build Firefox package
         run: |
           mkdir -p dist/firefox
 
-          # Copy common files
-          cp -r icons _locales *.js *.html *.css dist/firefox/ 2>/dev/null || true
+          # Copy common files (exclude browser-specific files)
+          cp -r icons _locales dist/firefox/
+          cp *.html dist/firefox/ 2>/dev/null || true
+
+          # Copy JavaScript files (exclude browser-specific background files)
+          for file in *.js; do
+            if [[ "$file" != "background-chrome.js" && "$file" != "background-firefox.js" ]]; then
+              cp "$file" dist/firefox/
+            fi
+          done
 
           # Copy Firefox-specific files
           cp manifest-firefox.json dist/firefox/manifest.json
           cp background-firefox.js dist/firefox/background.js
 
-          # Remove Chrome-specific files
-          rm -f dist/firefox/background-chrome.js
-          rm -f dist/firefox/manifest-chrome.json
-          rm -f dist/firefox/manifest-backup.json
-
-          # Create zip
+          # Create zip (exclude unnecessary files)
           cd dist/firefox
           zip -r ../plex-imdb-extension-firefox-v${{ steps.version.outputs.VERSION }}.zip . \
-            -x "*.DS_Store" -x "*.git*" -x "*chrome*"
+            -x "*.DS_Store" -x "*.git*" -x "*.md" -x "*screenshots*" -x "*.sh"
+          cd ../..
+
+      - name: Install addons-linter
+        run: npm install -g addons-linter
+
+      - name: Validate Firefox package
+        run: |
+          cd dist/firefox
+          addons-linter . --self-hosted --output text
           cd ../..
 
       - name: Create Release

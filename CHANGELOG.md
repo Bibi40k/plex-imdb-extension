@@ -5,6 +5,18 @@ All notable changes to Plex IMDb Enhancer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-02-09
+
+### Added
+- **Auto-Setup on Install** - Opens setup page automatically if API key not configured
+
+### Fixed
+- **Mozilla Validation Compliance** - Added required `data_collection_permissions` for Firefox
+- **Icon Sizes** - Created proper 16x16 and 48x48 icons (were all 128x128)
+- **innerHTML Security** - Replaced unsafe innerHTML usage with DOMParser
+- **Firefox Min Version** - Updated to 140.0 for data_collection_permissions support
+- **Build Pipeline** - Improved GitHub Actions to exclude dev files and run addons-linter
+
 ## [0.2.0] - 2026-02-09
 
 ### Added
@@ -66,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - IMDb rating buttons on Plex movie pages
 - Click-to-open IMDb functionality
 
+[0.2.1]: https://github.com/Bibi40k/plex-imdb-extension/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Bibi40k/plex-imdb-extension/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Bibi40k/plex-imdb-extension/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Bibi40k/plex-imdb-extension/releases/tag/v0.1.0

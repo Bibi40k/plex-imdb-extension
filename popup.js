@@ -23,8 +23,10 @@ let plexToggle, plexContent, plexTokenInput, plexUrlInput, savePlexButton, testP
  * @returns {string} Sanitized HTML
  */
 function sanitizeHTML(html, allowedTags = ['strong', 'em', 'br', 'code']) {
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
+    // Use DOMParser instead of innerHTML to avoid security warnings
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const temp = doc.body;
 
     // Whitelist approach: only keep allowed tags without attributes
     const walker = document.createTreeWalker(
@@ -75,8 +77,15 @@ function initializeI18n() {
             } else {
                 // Check if message contains HTML tags
                 if (message.includes('<strong>') || message.includes('<em>') || message.includes('<br>') || message.includes('<code>')) {
-                    // Sanitize HTML - only allow safe tags
-                    element.innerHTML = sanitizeHTML(message, ['strong', 'em', 'br', 'code']);
+                    // Sanitize HTML using DOMParser (safer than innerHTML)
+                    const sanitized = sanitizeHTML(message, ['strong', 'em', 'br', 'code']);
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(sanitized, 'text/html');
+                    // Clear element and append sanitized content
+                    element.textContent = '';
+                    while (doc.body.firstChild) {
+                        element.appendChild(doc.body.firstChild);
+                    }
                 } else {
                     // Use textContent for safety
                     element.textContent = message;
@@ -479,10 +488,20 @@ quickSetupInput.addEventListener('paste', (e) => {
                     return;
                 }
 
-                // Show success message
+                // Show success message - use textContent to avoid innerHTML security warning
                 quickSetupStatus.className = 'success';
-                quickSetupStatus.innerHTML = '✅ ' + (chrome.i18n.getMessage('quickSetupSuccess') ||
-                    `Extracted & saved!<br>Token: ${token.substring(0, 8)}...<br>Server: ${serverUrl}`);
+                const successMsg = chrome.i18n.getMessage('quickSetupSuccess');
+                if (successMsg) {
+                    quickSetupStatus.textContent = '✅ ' + successMsg;
+                } else {
+                    // Build message safely without innerHTML
+                    quickSetupStatus.textContent = '';
+                    quickSetupStatus.appendChild(document.createTextNode('✅ Extracted & saved!'));
+                    quickSetupStatus.appendChild(document.createElement('br'));
+                    quickSetupStatus.appendChild(document.createTextNode('Token: ' + token.substring(0, 8) + '...'));
+                    quickSetupStatus.appendChild(document.createElement('br'));
+                    quickSetupStatus.appendChild(document.createTextNode('Server: ' + serverUrl));
+                }
 
                 popupLogger.info('Quick setup successful - saved to storage');
 
