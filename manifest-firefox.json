@@ -48,7 +48,7 @@
   },
 
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["background-firefox.js"]
   },
 
   "content_security_policy": {

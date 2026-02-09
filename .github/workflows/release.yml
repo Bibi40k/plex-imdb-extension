@@ -36,6 +36,9 @@ jobs:
           cp manifest-chrome.json dist/chrome/manifest.json
           cp background-chrome.js dist/chrome/background.js
 
+          # Fix manifest to reference background.js instead of background-chrome.js
+          sed -i 's/"background-chrome.js"/"background.js"/g' dist/chrome/manifest.json
+
           # Create zip (exclude unnecessary files)
           cd dist/chrome
           zip -r ../plex-imdb-extension-chrome-v${{ steps.version.outputs.VERSION }}.zip . \
@@ -60,6 +63,9 @@ jobs:
           # Copy Firefox-specific files
           cp manifest-firefox.json dist/firefox/manifest.json
           cp background-firefox.js dist/firefox/background.js
+
+          # Fix manifest to reference background.js instead of background-firefox.js
+          sed -i 's/"background-firefox.js"/"background.js"/g' dist/firefox/manifest.json
 
           # Create zip (exclude unnecessary files)
           cd dist/firefox
