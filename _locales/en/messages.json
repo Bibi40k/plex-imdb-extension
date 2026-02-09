@@ -1,0 +1,125 @@
+{
+  "extensionName": {
+    "message": "Plex IMDb Enhancer"
+  },
+  "extensionDescription": {
+    "message": "Add clickable IMDb ratings to Plex Web with enterprise-grade performance and security"
+  },
+  "popupTitle": {
+    "message": "Plex IMDb Enhancer - Settings"
+  },
+  "configTitle": {
+    "message": "OMDb API Key Configuration"
+  },
+  "apiKeySection": {
+    "message": "OMDb API Key"
+  },
+  "howToGetKey": {
+    "message": "How to get your API key (FREE):"
+  },
+  "step1": {
+    "message": "Visit"
+  },
+  "step2": {
+    "message": "Select <strong>FREE</strong> (1,000 requests/day)"
+  },
+  "step3": {
+    "message": "Enter your email and activate from email"
+  },
+  "step4": {
+    "message": "Copy the API key here"
+  },
+  "enterApiKey": {
+    "message": "Enter your API Key:"
+  },
+  "placeholder": {
+    "message": "e.g., a1b2c3d4"
+  },
+  "showKey": {
+    "message": "Show key"
+  },
+  "currentKey": {
+    "message": "Current key:"
+  },
+  "saveButton": {
+    "message": "💾 Save"
+  },
+  "testButton": {
+    "message": "🧪 Test Key"
+  },
+  "clearButton": {
+    "message": "🗑️ Clear Key"
+  },
+  "infoSection": {
+    "message": "Information"
+  },
+  "howItWorks": {
+    "message": "How it works:"
+  },
+  "feature1": {
+    "message": "Extension automatically adds IMDb button in Plex"
+  },
+  "feature2": {
+    "message": "Click the button → opens IMDb page"
+  },
+  "feature3": {
+    "message": "IMDb rating is displayed directly"
+  },
+  "troubleshooting": {
+    "message": "If the button doesn't appear:"
+  },
+  "troubleshoot1": {
+    "message": "Verify you're on a movie details page"
+  },
+  "troubleshoot2": {
+    "message": "Reload the page (Ctrl+R)"
+  },
+  "troubleshoot3": {
+    "message": "Check Console (F12) for errors"
+  },
+  "errorNoApiKey": {
+    "message": "Please enter an API key"
+  },
+  "errorInvalidFormat": {
+    "message": "Invalid API key format! Must be 8 hexadecimal characters (0-9, a-f)"
+  },
+  "errorPlaceholder": {
+    "message": "Please enter a real API key, not a placeholder"
+  },
+  "successSaved": {
+    "message": "API key saved successfully! Reload Plex to apply changes."
+  },
+  "errorInvalidKey": {
+    "message": "API key is invalid or not working! Please check and try again."
+  },
+  "successTestValid": {
+    "message": "API key works perfectly!"
+  },
+  "errorTestInvalid": {
+    "message": "API key is invalid! Please check and try again."
+  },
+  "confirmDelete": {
+    "message": "Are you sure you want to delete the saved API key?"
+  },
+  "successDeleted": {
+    "message": "API key deleted! Enter a new one to continue."
+  },
+  "buttonVerifying": {
+    "message": "⏳ Verifying..."
+  },
+  "buttonSaved": {
+    "message": "✅ Saved!"
+  },
+  "buttonInvalidKey": {
+    "message": "❌ Invalid Key!"
+  },
+  "buttonTesting": {
+    "message": "⏳ Testing..."
+  },
+  "buttonValid": {
+    "message": "✅ Valid!"
+  },
+  "buttonInvalid": {
+    "message": "❌ Invalid!"
+  }
+}

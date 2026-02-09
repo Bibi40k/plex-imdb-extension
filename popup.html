@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="popupTitle">Plex IMDb Enhancer - Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 400px;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #f5c518;
+            margin-bottom: 5px;
+        }
+
+        .header .emoji {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .section {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #f5c518;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #555;
+            border-radius: 6px;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #f5c518;
+        }
+
+        input[type="text"].error,
+        input[type="password"].error {
+            border-color: #ff4444;
+        }
+
+        input[type="text"].success,
+        input[type="password"].success {
+            border-color: #4CAF50;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #f5c518 0%, #e6b800 100%);
+            color: #000;
+        }
+
+        .button-primary:hover {
+            background: linear-gradient(135deg, #ffd700 0%, #f5c518 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 197, 24, 0.3);
+        }
+
+        .button-secondary {
+            background: #555;
+            color: #fff;
+        }
+
+        .button-secondary:hover {
+            background: #666;
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+            display: block;
+        }
+
+        .status.error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            display: block;
+        }
+
+        .info-box {
+            background: rgba(245, 197, 24, 0.1);
+            border: 1px solid #f5c518;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+
+        .info-box a {
+            color: #f5c518;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .info-box a:hover {
+            text-decoration: underline;
+        }
+
+        .info-box ol {
+            margin: 10px 0 0 18px;
+            padding: 0;
+        }
+
+        .info-box li {
+            margin: 5px 0;
+        }
+
+        .current-key {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        .current-key strong {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="emoji">🎬</div>
+        <h1 data-i18n="extensionName">Plex IMDb Enhancer</h1>
+        <p data-i18n="configTitle">OMDb API Key Configuration</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🔑 <span data-i18n="apiKeySection">OMDb API Key</span></div>
+
+        <div class="info-box">
+            <strong data-i18n="howToGetKey">How to get your API key (FREE):</strong>
+            <ol>
+                <li><span data-i18n="step1">Visit</span> <a href="http://www.omdbapi.com/apikey.aspx" target="_blank">omdbapi.com/apikey.aspx</a></li>
+                <li data-i18n="step2">Select <strong>FREE</strong> (1,000 requests/day)</li>
+                <li data-i18n="step3">Enter your email and activate from email</li>
+                <li data-i18n="step4">Copy the API key here</li>
+            </ol>
+        </div>
+
+        <label for="apiKeyInput" data-i18n="enterApiKey" style="margin-top: 12px; display: block;">Enter your API Key:</label>
+        <div style="position: relative; width: 100%;">
+            <input type="password" id="apiKeyInput" data-i18n-placeholder="placeholder" placeholder="e.g., a1b2c3d4" style="padding-right: 40px;">
+            <button type="button" id="toggleKeyVisibility" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 20px; padding: 0; color: #aaa; line-height: 1;">👁️</button>
+        </div>
+
+        <div id="currentKey" class="current-key" style="display: none;">
+            <span data-i18n="currentKey">Current key:</span> <strong id="keyValue"></strong>
+        </div>
+
+        <button id="saveButton" class="button button-primary" data-i18n="saveButton">💾 Save</button>
+        <button id="testButton" class="button button-secondary" data-i18n="testButton">🧪 Test Key</button>
+        <button id="clearButton" class="button button-secondary" data-i18n="clearButton">🗑️ Clear Key</button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">ℹ️ <span data-i18n="infoSection">Information</span></div>
+        <div style="font-size: 12px; color: #aaa; line-height: 1.6;">
+            <p><strong data-i18n="howItWorks">How it works:</strong></p>
+            <ul style="margin: 10px 0 0 20px; padding: 0;">
+                <li data-i18n="feature1">Extension automatically adds IMDb button in Plex</li>
+                <li data-i18n="feature2">Click the button → opens IMDb page</li>
+                <li data-i18n="feature3">IMDb rating is displayed directly</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong data-i18n="troubleshooting">If the button doesn't appear:</strong></p>
+            <ul style="margin: 10px 0 0 20px; padding: 0;">
+                <li data-i18n="troubleshoot1">Verify you're on a movie details page</li>
+                <li data-i18n="troubleshoot2">Reload the page (Ctrl+R)</li>
+                <li data-i18n="troubleshoot3">Check Console (F12) for errors</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="logger.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

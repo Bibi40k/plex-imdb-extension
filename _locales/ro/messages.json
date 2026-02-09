@@ -1,0 +1,125 @@
+{
+  "extensionName": {
+    "message": "Plex IMDb Enhancer"
+  },
+  "extensionDescription": {
+    "message": "Adaugă rating-uri IMDb clicabile în Plex Web cu performanță și securitate de nivel enterprise"
+  },
+  "popupTitle": {
+    "message": "Plex IMDb Enhancer - Setări"
+  },
+  "configTitle": {
+    "message": "Configurare API Key OMDb"
+  },
+  "apiKeySection": {
+    "message": "API Key OMDb"
+  },
+  "howToGetKey": {
+    "message": "Cum obții API key-ul (GRATUIT):"
+  },
+  "step1": {
+    "message": "Vizitează"
+  },
+  "step2": {
+    "message": "Selectează <strong>FREE</strong> (1,000 cereri/zi)"
+  },
+  "step3": {
+    "message": "Introdu email-ul și activează din email"
+  },
+  "step4": {
+    "message": "Copiază API key-ul aici"
+  },
+  "enterApiKey": {
+    "message": "Introdu API Key-ul tău:"
+  },
+  "placeholder": {
+    "message": "ex: a1b2c3d4"
+  },
+  "showKey": {
+    "message": "Arată key-ul"
+  },
+  "currentKey": {
+    "message": "Key actual:"
+  },
+  "saveButton": {
+    "message": "💾 Salvează"
+  },
+  "testButton": {
+    "message": "🧪 Testează Key-ul"
+  },
+  "clearButton": {
+    "message": "🗑️ Șterge Key-ul"
+  },
+  "infoSection": {
+    "message": "Informații"
+  },
+  "howItWorks": {
+    "message": "Cum funcționează:"
+  },
+  "feature1": {
+    "message": "Extensia adaugă automat butonul IMDb în Plex"
+  },
+  "feature2": {
+    "message": "Click pe buton → deschide pagina IMDb"
+  },
+  "feature3": {
+    "message": "Rating-ul IMDb este afișat direct"
+  },
+  "troubleshooting": {
+    "message": "Dacă butonul nu apare:"
+  },
+  "troubleshoot1": {
+    "message": "Verifică că ești pe pagina de detalii a unui film"
+  },
+  "troubleshoot2": {
+    "message": "Reîncarcă pagina (Ctrl+R)"
+  },
+  "troubleshoot3": {
+    "message": "Verifică Console (F12) pentru erori"
+  },
+  "errorNoApiKey": {
+    "message": "Te rog introdu un API key"
+  },
+  "errorInvalidFormat": {
+    "message": "Format API key invalid! Trebuie să fie 8 caractere hexadecimale (0-9, a-f)"
+  },
+  "errorPlaceholder": {
+    "message": "Te rog introdu un API key real, nu un placeholder"
+  },
+  "successSaved": {
+    "message": "API key salvat cu succes! Reîncarcă Plex pentru a aplica modificările."
+  },
+  "errorInvalidKey": {
+    "message": "API key invalid sau nu funcționează! Te rog verifică și încearcă din nou."
+  },
+  "successTestValid": {
+    "message": "API key funcționează perfect!"
+  },
+  "errorTestInvalid": {
+    "message": "API key invalid! Te rog verifică și încearcă din nou."
+  },
+  "confirmDelete": {
+    "message": "Ești sigur că vrei să ștergi API key-ul salvat?"
+  },
+  "successDeleted": {
+    "message": "API key șters! Introdu unul nou pentru a continua."
+  },
+  "buttonVerifying": {
+    "message": "⏳ Verific..."
+  },
+  "buttonSaved": {
+    "message": "✅ Salvat!"
+  },
+  "buttonInvalidKey": {
+    "message": "❌ Key Invalid!"
+  },
+  "buttonTesting": {
+    "message": "⏳ Testez..."
+  },
+  "buttonValid": {
+    "message": "✅ Valid!"
+  },
+  "buttonInvalid": {
+    "message": "❌ Invalid!"
+  }
+}
