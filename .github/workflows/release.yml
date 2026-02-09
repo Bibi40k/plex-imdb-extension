@@ -1,0 +1,113 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create extension package
+        run: |
+          # Create a clean directory for the extension
+          mkdir -p extension-package
+
+          # Copy all necessary files (exclude .git, .github, screenshots, etc.)
+          cp -r \
+            manifest.json \
+            config.js \
+            logger.js \
+            cache.js \
+            rate-limiter.js \
+            api-client.js \
+            content.js \
+            background.js \
+            popup.html \
+            popup.js \
+            icons/ \
+            _locales/ \
+            extension-package/
+
+          # Create zip file
+          cd extension-package
+          zip -r ../plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip .
+          cd ..
+
+          # Cleanup
+          rm -rf extension-package
+
+      - name: Generate release notes
+        id: generate_notes
+        run: |
+          cat > release-notes.md << 'EOF'
+          # 🎬 Plex IMDb Enhancer
+
+          Add clickable IMDb ratings to Plex Web!
+
+          ## 📦 Installation
+
+          ### Chrome/Edge/Brave
+          1. Download `plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip`
+          2. Extract the zip file
+          3. Open `chrome://extensions/`
+          4. Enable "Developer mode"
+          5. Click "Load unpacked"
+          6. Select the extracted folder
+
+          ### Firefox
+          1. Download `plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip`
+          2. Extract the zip file
+          3. Open `about:debugging#/runtime/this-firefox`
+          4. Click "Load Temporary Add-on"
+          5. Select `manifest.json` from the extracted folder
+
+          ## ⚙️ Setup
+
+          1. Get free OMDb API key from [omdbapi.com/apikey.aspx](http://www.omdbapi.com/apikey.aspx)
+          2. Click extension icon in browser toolbar
+          3. Enter API key and click Save
+          4. Open Plex Web and enjoy IMDb ratings!
+
+          ## 📋 Requirements
+
+          - Chrome/Edge/Brave (v88+) or Firefox (v109+)
+          - Free OMDb API key (1,000 requests/day)
+          - Plex Web account
+
+          ---
+
+          See [README](https://github.com/Bibi40k/plex-imdb-extension#readme) for full documentation.
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          body_path: release-notes.md
+          files: |
+            plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          echo "✅ Release ${{ steps.get_version.outputs.VERSION }} created successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Package: plex-imdb-extension-${{ steps.get_version.outputs.VERSION }}.zip" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.VERSION }})" >> $GITHUB_STEP_SUMMARY
